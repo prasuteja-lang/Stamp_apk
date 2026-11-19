@@ -80,6 +80,12 @@ nav button.on{opacity:1;color:var(--ink)}
 #boom .hk{position:static;width:190px;height:190px;font-size:96px;background:var(--paper);animation:press .5s cubic-bezier(.2,1.5,.4,1) both}
 #boom p{position:absolute;bottom:30%;font:800 22px 'Shippori Mincho',serif;color:var(--ink)}
 #toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%);z-index:20;background:#27231f;color:#fff;padding:10px 16px;border-radius:12px;max-width:88%;text-align:center}
+.seg{display:flex;gap:8px;margin:4px 0 14px}
+.seg button{flex:1;padding:11px 6px;border-radius:12px;border:1.5px solid var(--ink);background:var(--paper);color:var(--ink);font:700 14px 'Zen Maru Gothic',sans-serif;cursor:pointer}
+.seg button.on{background:var(--ink);color:#fff}
+.kf{display:grid;gap:12px;margin-top:8px}
+.kf label{display:grid;gap:4px;font:700 14px 'Zen Maru Gothic',sans-serif;color:var(--ink)}
+.kf .hint{margin:0;color:#a3281f}
 @keyframes rot{to{transform:rotate(360deg)}}
 nav button.spin b{animation:rot .8s linear infinite}
 @media(prefers-reduced-motion:reduce){#fx{display:none}*{animation:none!important}}
@@ -168,8 +174,8 @@ function renderCard(box,d,y,m,fresh){
   d.month.forEach(s=>{const k=+s.tanggal.slice(8);(by[k]=by[k]||[]).push(s)});
   let h='<div class="grid">';
   for(let i=1;i<=n;i++){const l=by[i];h+=`<button class="c${i==tdy?' today':''}" ${l?`data-d="${i}"`:'disabled'}><i>${i}</i>${l?`<span class="hk${fresh==i?' new':''}" style="--rot:${(i*37%13)-6}deg">${g}</span>${l.length>1?`<b>${l.length}</b>`:''}`:''}</button>`}
-  box.innerHTML=h+`</div><p class="sum"><b>${d.month.length}</b> stamp bulan ini · <b>${d.total}</b> hafalan selesai</p>`;
-  box.querySelectorAll('[data-d]').forEach(b=>b.onclick=()=>modal(`<h3>${b.dataset.d} ${MN[m-1]}</h3><ul class="ls">${by[b.dataset.d].map(s=>`<li>${esc(s.judul)}</li>`).join('')}</ul><button class="btn" onclick="closeM()">Tutup</button>`));
+  box.innerHTML=h+`</div><p class="sum"><b>${d.month.length}</b> stamp bulan ini · <b>${d.total}</b> hafalan selesai · <b>${d.kaiwa||0}</b> kaiwa</p>`;
+  box.querySelectorAll('[data-d]').forEach(b=>b.onclick=()=>modal(`<h3>${b.dataset.d} ${MN[m-1]}</h3><ul class="ls">${by[b.dataset.d].map(s=>`<li>${s.jenis=='kaiwa'?'<b>Kaiwa '+esc(s.jam||'')+'</b> · ':''}${esc(s.judul)}</li>`).join('')}</ul><button class="btn" onclick="closeM()">Tutup</button>`));
 }
 
 async function loadKartu(){
@@ -185,13 +191,34 @@ let PT=null,DN=new Set();
 async function loadMinta(){
   theme(now.getMonth()+1);const b=$('#mbox'),ym=ymS(now.getFullYear(),now.getMonth()+1);
   const cd=cacheGet(ck('card',[T,null,ym])),ch=cacheGet(ck('hafalanList',[T]));
-  if(cd&&ch){H=ch;DN=new Set(cd.done);pilihHafalan()}else b.innerHTML='<p class="sum">Memuat…</p>';
+  if(cd&&ch){H=ch;DN=new Set(cd.done);pilihMinta()}else b.innerHTML='<p class="sum">Memuat…</p>';
   try{const [r,d,hl]=await Promise.all([api('myRequest',T),apiS('card',[T,null,ym]),apiS('hafalanList',[T])]);
     H=hl;DN=new Set(d.done);
-    if(r)showKode(r);else if(!cd||!ch||JSON.stringify([d.done,hl])!==JSON.stringify([cd.done,ch]))pilihHafalan()}catch(e){err(e)}
+    if(r)showKode(r);else if(!cd||!ch||(MJ=='hafalan'&&JSON.stringify([d.done,hl])!==JSON.stringify([cd.done,ch])))pilihMinta()}catch(e){err(e)}
+}
+let MJ='hafalan';
+function pilihMinta(){
+  const bx=$('#mbox');
+  bx.innerHTML=`<div class="seg"><button data-m="hafalan" class="${MJ=='hafalan'?'on':''}">Hafalan Kotoba</button><button data-m="kaiwa" class="${MJ=='kaiwa'?'on':''}">Kaiwa Renshuu</button></div><div id="mb"></div>`;
+  bx.querySelectorAll('.seg button').forEach(b=>b.onclick=()=>{MJ=b.dataset.m;pilihMinta()});
+  MJ=='kaiwa'?formKaiwa():pilihHafalan();
+}
+function formKaiwa(){
+  const d=new Date(),p=n=>String(n).padStart(2,'0');
+  const tg=d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate()),jm=p(d.getHours())+':'+p(d.getMinutes());
+  $('#mb').innerHTML=`<h2 style="text-align:center">Kaiwa Renshuu</h2><p class="hint" style="margin-bottom:4px">Isi semua kolom, lalu minta kode untuk dites sensei.</p>
+  <form id="kf" class="kf"><label>Tanggal<input type="date" id="kt" value="${tg}" required></label>
+  <label>Jam<input type="time" id="kjam" value="${jm}" required></label>
+  <label>Tema kaiwa hari ini<input id="kth" maxlength="100" placeholder="Contoh: Jikoshoukai, Kaimono" autocomplete="off" required></label>
+  <p class="hint" id="kh"></p><button class="btn" id="kb" disabled>Minta kode</button></form>`;
+  const f=$('#kf'),bt=$('#kb'),ins=[...f.querySelectorAll('input')];
+  const chk=()=>{const ok=ins.every(i=>i.value.trim());bt.disabled=!ok;$('#kh').textContent=ok?'':'Semua kolom wajib diisi.'};
+  ins.forEach(i=>i.oninput=chk);chk();
+  f.onsubmit=async e=>{e.preventDefault();chk();if(bt.disabled)return;bt.disabled=true;
+    try{showKode(await api('requestKaiwa',T,$('#kth').value.trim(),$('#kt').value,$('#kjam').value))}catch(x){err(x);chk()}};
 }
 function pilihHafalan(){
-  const b=$('#mbox');
+  const b=$('#mb');
   b.innerHTML='<h2 style="text-align:center">Hafalan mana yang sudah kamu kuasai?</h2><input id="mq" placeholder="Cari hafalan" style="margin-top:12px"><div id="ml"></div>';
   const draw=()=>{const q=$('#mq').value.toLowerCase(),G={};
     H.filter(x=>x.judul.toLowerCase().includes(q)).forEach(x=>(G[x.kategori||'Lainnya']=G[x.kategori||'Lainnya']||[]).push(x));
@@ -201,20 +228,20 @@ function pilihHafalan(){
 }
 function showKode(r){
   clearInterval(PT);const dl=Date.now()+r.sisa*1000;let n=0,busy=false;
-  $('#mbox').innerHTML=`<p class="hint">Tunjukkan kode ini ke sensei untuk dites.</p><div class="kode">${r.kode.split('').map(c=>`<span>${c}</span>`).join('')}</div><div id="qrk"></div><p class="sum"><b>${esc(r.judul)}</b></p><p class="sum" id="sisa"></p><button class="btn ghost" id="bt" style="margin-top:18px">Batalkan / ganti hafalan</button>`;
+  $('#mbox').innerHTML=`<p class="hint">Tunjukkan kode ini ke sensei untuk dites.</p><div class="kode">${r.kode.split('').map(c=>`<span>${c}</span>`).join('')}</div><div id="qrk"></div>${r.jenis=='kaiwa'?`<p class="sum"><b>Kaiwa Renshuu</b><br>${esc(r.judul)}<br>${esc(r.tgl)} · ${esc(r.jam)}</p>`:`<p class="sum"><b>${esc(r.judul)}</b></p>`}<p class="sum" id="sisa"></p><button class="btn ghost" id="bt" style="margin-top:18px">Batalkan / ganti hafalan</button>`;
   if(window.QRCode)new QRCode($('#qrk'),{text:r.kode,width:176,height:176,colorDark:'#1c1a18',colorLight:'#ffffff'});
   $('#bt').onclick=async()=>{clearInterval(PT);try{await api('cancelRequest',T)}catch(e){}loadMinta()};
   PT=setInterval(async()=>{
     const s=Math.max(0,Math.round((dl-Date.now())/1000));$('#sisa').textContent='Berlaku '+Math.floor(s/60)+':'+String(s%60).padStart(2,'0');
     if(++n%3||busy)return;busy=true;
-    try{if(!(await api('myRequest',T))){clearInterval(PT);const d=await apiF('card',[T,null,ymS(now.getFullYear(),now.getMonth()+1)]);
-      if(d.done.includes(r.judul)){boom();toast('Stamp diterima!')}else toast('Kode sudah kedaluwarsa.');loadMinta()}}catch(e){}
+    try{if(!(await api('myRequest',T))){clearInterval(PT);const ok=r.jenis=='kaiwa'?(await apiF('card',[T,null,r.tgl.slice(0,7)])).month.some(s=>s.jenis=='kaiwa'&&s.judul==r.judul&&s.jam==r.jam&&s.tanggal==r.tgl):(await apiF('card',[T,null,ymS(now.getFullYear(),now.getMonth()+1)])).done.includes(r.judul);
+      if(ok){boom();toast('Stamp diterima!')}else toast('Kode sudah kedaluwarsa.');loadMinta()}}catch(e){}
     busy=false},1000);
 }
 let QS=null,scanBusy=false;
 async function cekKode(c){
   try{const r=await api('lookupCode',T,c);
-    modal(`<h3>Kode ${esc(r.kode)}</h3><p>${esc(r.nama)}<br><b>${esc(r.judul)}</b></p><button class="btn" id="ok">Beri stamp</button><button class="btn ghost" onclick="closeM()">Batal</button>`);
+    modal(`<h3>Kode ${esc(r.kode)}</h3><p>${esc(r.nama)}<br>${r.jenis=='kaiwa'?`<b>Kaiwa Renshuu</b><br>Tema: ${esc(r.judul)}<br>${esc(r.tgl)} · ${esc(r.jam)}`:`<b>${esc(r.judul)}</b>`}</p><button class="btn" id="ok">Beri stamp</button><button class="btn ghost" onclick="closeM()">Batal</button>`);
     $('#ok').onclick=async()=>{$('#ok').disabled=true;try{const x=await api('confirmCode',T,r.kode);closeM();boom();toast('Stamp diberikan ke '+x.nama);$('#mc').value=''}catch(e2){closeM();err(e2)}};
   }catch(x){err(x)}
 }
