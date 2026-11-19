@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stamp Kotoba</title>
+<meta name="theme-color" content="#a3281f">
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@600;800&family=Zen+Maru+Gothic:wght@500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+<style>
+[hidden]{display:none!important}
+*{box-sizing:border-box;margin:0}
+body{font:500 16px/1.5 'Zen Maru Gothic',system-ui,sans-serif;background:var(--bg);color:#27231f;min-height:100vh;padding-bottom:84px;transition:background .6s}
+body[data-s=fuyu]{--bg:#e8eff7;--paper:#fbfdff;--ink:#2b4f86;--soft:#d3e2f3}
+body[data-s=haru]{--bg:#fcedf1;--paper:#fffafb;--ink:#c2365f;--soft:#f8d9e2}
+body[data-s=natsu]{--bg:#e5f4f1;--paper:#fafffe;--ink:#0f7f86;--soft:#c8e9e4}
+body[data-s=aki]{--bg:#f1e1da;--paper:#fffaf7;--ink:#a3281f;--soft:#ebc8bb}
+h1,h2,h3,.kj,.hk{font-family:'Shippori Mincho',serif}
+#fx{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:0}
+#fx span{position:absolute;top:-30px;opacity:.45;animation:fall linear infinite}
+@keyframes fall{to{transform:translateY(110vh) rotate(360deg)}}
+#login,#app>*{position:relative;z-index:1}
+#login{min-height:100vh;display:grid;align-content:center;justify-items:center;gap:10px;padding:24px;text-align:center}
+.seal{width:84px;height:84px;display:grid;place-items:center;font:800 44px 'Shippori Mincho',serif;color:var(--paper);background:var(--ink);border-radius:50%;box-shadow:0 0 0 4px var(--bg),0 0 0 6px var(--ink);transform:rotate(-8deg)}
+h1{font-size:34px;color:var(--ink);letter-spacing:.08em}
+.sub{opacity:.7;margin-bottom:12px}
+form{display:grid;gap:10px;width:min(320px,100%)}
+input{font:inherit;padding:13px 14px;border:1.5px solid color-mix(in srgb,var(--ink) 35%,transparent);border-radius:12px;background:var(--paper);color:inherit;width:100%}
+input:focus-visible,button:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+.btn{font:700 16px 'Zen Maru Gothic',sans-serif;padding:13px 18px;border:0;border-radius:12px;background:var(--ink);color:#fff;cursor:pointer;width:100%}
+.btn.ghost,.ghost{background:transparent;color:var(--ink);border:1.5px solid var(--ink)}
+.btn:disabled{opacity:.5}
+header{display:flex;justify-content:space-between;align-items:center;padding:14px 18px}
+header small{display:block;opacity:.65;font-size:12px}
+header .ghost{padding:6px 12px;border-radius:10px;font:700 13px 'Zen Maru Gothic',sans-serif;cursor:pointer}
+.pn{padding:4px 16px 16px;max-width:520px;margin:0 auto}
+.mon{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.mon>div{text-align:center}
+.mon button{width:44px;height:44px;border-radius:50%;border:1.5px solid var(--ink);background:var(--paper);color:var(--ink);font-size:22px;cursor:pointer}
+.kj{display:block;font-size:46px;line-height:1;color:var(--ink);font-weight:800}
+h2{font-size:20px;color:var(--ink)}
+.grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.c{aspect-ratio:1;position:relative;background:var(--paper);border:1px dashed color-mix(in srgb,var(--ink) 30%,transparent);border-radius:12px;padding:0;cursor:pointer;font:inherit;color:inherit}
+.c:disabled{cursor:default}
+.c.today{border:2px solid var(--ink)}
+.c i{position:absolute;top:3px;left:6px;font:700 10px 'Zen Maru Gothic';font-style:normal;opacity:.5}
+.c b{position:absolute;right:3px;bottom:2px;font:700 11px 'Zen Maru Gothic';background:var(--ink);color:#fff;border-radius:9px;padding:0 6px}
+.hk{--rot:0deg;position:absolute;inset:8px;border-radius:50%;border:2.5px solid var(--ink);color:var(--ink);display:grid;place-items:center;font-weight:800;font-size:clamp(15px,5.5vw,24px);background:color-mix(in srgb,var(--ink) 9%,transparent);box-shadow:inset 0 0 0 3px var(--paper),inset 0 0 0 4.5px var(--ink);transform:rotate(var(--rot))}
+.hk.new{animation:press .5s cubic-bezier(.2,1.5,.4,1) both}
+@keyframes press{from{transform:scale(2.4) rotate(var(--rot));opacity:0}to{transform:scale(1) rotate(var(--rot));opacity:1}}
+.sum{margin-top:14px;text-align:center;opacity:.8}
+.sum b{color:var(--ink);font-size:18px}
+.hint{text-align:center;opacity:.7;margin:10px 0 16px}
+#reader{width:100%;border-radius:14px;overflow:hidden;margin:0 0 10px}
+#sn{color:var(--ink);text-align:center;margin:8px 0}
+#qrk{display:grid;place-items:center;width:200px;height:200px;margin:0 auto 8px;background:#fff;border-radius:16px;border:2px solid var(--ink)}
+.kode{display:flex;justify-content:center;gap:8px;margin:18px 0}
+.kode span{width:54px;height:72px;display:grid;place-items:center;font:800 38px 'Shippori Mincho',serif;color:var(--ink);background:var(--paper);border:2px solid var(--ink);border-radius:12px;box-shadow:0 0 0 4px var(--soft)}
+.kin{text-align:center;font:800 32px 'Shippori Mincho',serif;letter-spacing:.35em;text-transform:uppercase;padding:16px}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;text-align:left;font:inherit;padding:12px 14px;margin-top:8px;background:var(--paper);border:1px solid color-mix(in srgb,var(--ink) 25%,transparent);border-radius:12px;color:inherit;cursor:pointer}
+.row span{font:700 13px 'Zen Maru Gothic';color:var(--ink);white-space:nowrap}
+.row.done{cursor:default;background:#e8f5ec;border-color:#86c79b}
+.row.done span{color:#187a42}
+h4 small{font:700 12px 'Zen Maru Gothic',sans-serif;color:#187a42;margin-left:6px}
+h4{margin:16px 0 0;color:var(--ink);font:800 15px 'Shippori Mincho',serif}
+nav{position:fixed;left:0;right:0;bottom:0;z-index:5;display:flex;background:var(--paper);border-top:2px solid var(--ink);padding-bottom:env(safe-area-inset-bottom)}
+nav button{flex:1;padding:8px 0 10px;border:0;background:none;font:700 12px 'Zen Maru Gothic',sans-serif;color:#27231f;opacity:.55;cursor:pointer}
+nav button b{display:block;font:800 22px 'Shippori Mincho',serif;line-height:1.1}
+nav button.on{opacity:1;color:var(--ink)}
+#sv{position:fixed;inset:0;z-index:8;background:var(--bg);overflow:auto;padding:0 16px 40px}
+#sv .in{max-width:520px;margin:0 auto}
+.top{display:flex;align-items:center;gap:12px;padding:14px 0}
+.top button{width:42px;height:42px;border-radius:50%;border:1.5px solid var(--ink);background:var(--paper);color:var(--ink);font-size:20px;cursor:pointer}
+#modal{position:fixed;inset:0;z-index:10;background:rgba(20,16,14,.5);display:grid;align-items:end}
+#modal>div{background:var(--paper);border-radius:22px 22px 0 0;padding:22px 20px calc(22px + env(safe-area-inset-bottom));max-width:520px;width:100%;margin:0 auto;display:grid;gap:10px}
+#modal h3{color:var(--ink);font-size:22px}
+.ls{padding-left:20px}
+#boom{position:fixed;inset:0;z-index:12;display:grid;place-items:center;background:rgba(255,255,255,.55);pointer-events:none}
+#boom .hk{position:static;width:190px;height:190px;font-size:96px;background:var(--paper);animation:press .5s cubic-bezier(.2,1.5,.4,1) both}
+#boom p{position:absolute;bottom:30%;font:800 22px 'Shippori Mincho',serif;color:var(--ink)}
+#toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%);z-index:20;background:#27231f;color:#fff;padding:10px 16px;border-radius:12px;max-width:88%;text-align:center}
+@media(prefers-reduced-motion:reduce){#fx{display:none}*{animation:none!important}}
+</style>
+</head>
+<body data-s="aki">
+<div id="fx"></div>
+
+<main id="login" hidden>
+  <div class="seal">印</div>
+  <h1>スタンプ帳</h1>
+  <p class="sub">Buku stamp hafalan kotoba</p>
+  <form id="lf">
+    <input id="u" placeholder="Username" autocomplete="username" autocapitalize="none" required>
+    <input id="pn" placeholder="PIN" type="password" inputmode="numeric" autocomplete="current-password" required>
+    <button class="btn" id="lb">Masuk</button>
+  </form>
+</main>
+
+<div id="app" hidden>
+  <header><div><b id="who"></b><small id="role"></small></div><button class="ghost" id="out">Keluar</button></header>
+  <section class="pn" id="p-kartu">
+    <div class="mon"><button id="pv" aria-label="Bulan sebelumnya">‹</button><div><span class="kj" id="kj"></span><h2 id="mt"></h2></div><button id="nx" aria-label="Bulan berikutnya">›</button></div>
+    <div id="cardbox"></div>
+  </section>
+  <section class="pn" id="p-minta" hidden>
+    <div id="mbox"></div>
+  </section>
+  <section class="pn" id="p-kode" hidden>
+    <h2 style="text-align:center;margin-top:6px">Terima kode siswa</h2>
+    <p class="hint">Scan QR di HP siswa, atau ketik kode 5 karakternya.</p>
+    <div id="reader"></div>
+    <button class="btn" id="cam">Scan QR</button>
+    <p id="sn"></p>
+    <form id="mf" style="width:100%;margin-top:14px"><input id="mc" class="kin" maxlength="5" placeholder="•••••" autocapitalize="characters" autocomplete="off" required><button class="btn ghost">Cek kode</button></form>
+  </section>
+  <section class="pn" id="p-siswa" hidden>
+    <input id="sq" placeholder="Cari nama siswa">
+    <div id="slist"></div>
+  </section>
+  <nav id="tabs"></nav>
+</div>
+
+<div id="sv" hidden><div class="in">
+  <div class="top"><button id="sb" aria-label="Kembali">‹</button><h2 id="svn"></h2></div>
+  <div id="svc"></div>
+  <input id="hq" placeholder="Cari hafalan" style="margin-top:18px">
+  <div id="svl"></div>
+</div></div>
+<div id="modal" hidden></div>
+<div id="boom" hidden></div>
+
+<script>
+const $=s=>document.querySelector(s),esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const MN=['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+const SE={fuyu:['冬','雪','❄️'],haru:['春','桜','🌸'],natsu:['夏','夏','🌻'],aki:['秋','楓','🍁']};
+const TABS={siswa:[['kartu','帳','Kartu'],['minta','印','Minta stamp']],sensei:[['kode','鍵','Kode'],['siswa','生','Siswa']]};
+const sOf=m=>m==12||m<3?'fuyu':m<6?'haru':m<9?'natsu':'aki';
+const now=new Date();let T=null,ME=null,H=null,CD=null,CUR=null,QR=null,Y=now.getFullYear(),M=now.getMonth()+1;
+const ymS=(y,m)=>y+'-'+String(m).padStart(2,'0');
+const API='https://script.google.com/macros/s/AKfycbwQ1Nopuf9Zl3vVIfnFctjBN3ylBKOH0UfoUSYSLE5Ieqj0oguqbSa1Dh2JQ4RePDaOmw/exec';
+const api=async(fn,...args)=>{let j;try{const r=await fetch(API,{method:'POST',body:JSON.stringify({fn,args})});j=await r.json()}catch(e){throw new Error('Tidak bisa terhubung. Periksa internet Anda.')}if(!j.ok)throw new Error(j.error);return j.data};
+const store={get:()=>{try{return localStorage.getItem('stk')}catch(e){return null}},set:v=>{try{v?localStorage.setItem('stk',v):localStorage.removeItem('stk')}catch(e){}}};
+function toast(t){let e=$('#toast');if(!e){e=document.createElement('div');e.id='toast';document.body.append(e)}e.textContent=t;e.hidden=false;clearTimeout(e.t);e.t=setTimeout(()=>e.hidden=true,3500)}
+const err=e=>toast(String((e&&e.message)||e).replace(/^Error:\s*/,''));
+function theme(m){const s=sOf(m);document.body.dataset.s=s;const fx=$('#fx');fx.innerHTML='';for(let i=0;i<10;i++){const p=document.createElement('span');p.textContent=SE[s][2];p.style.cssText=`left:${Math.random()*100}%;animation-duration:${9+Math.random()*8}s;animation-delay:-${Math.random()*12}s;font-size:${12+Math.random()*12}px`;fx.append(p)}}
+function modal(h){const m=$('#modal');m.innerHTML='<div>'+h+'</div>';m.hidden=false;m.onclick=e=>{if(e.target===m)closeM()}}
+function closeM(){$('#modal').hidden=true}
+
+function renderCard(box,d,y,m,fresh){
+  const n=new Date(y,m,0).getDate(),by={},g=SE[sOf(m)][1],td=new Date(),tdy=td.getFullYear()==y&&td.getMonth()+1==m?td.getDate():0;
+  d.month.forEach(s=>{const k=+s.tanggal.slice(8);(by[k]=by[k]||[]).push(s)});
+  let h='<div class="grid">';
+  for(let i=1;i<=n;i++){const l=by[i];h+=`<button class="c${i==tdy?' today':''}" ${l?`data-d="${i}"`:'disabled'}><i>${i}</i>${l?`<span class="hk${fresh==i?' new':''}" style="--rot:${(i*37%13)-6}deg">${g}</span>${l.length>1?`<b>${l.length}</b>`:''}`:''}</button>`}
+  box.innerHTML=h+`</div><p class="sum"><b>${d.month.length}</b> stamp bulan ini · <b>${d.total}</b> hafalan selesai</p>`;
+  box.querySelectorAll('[data-d]').forEach(b=>b.onclick=()=>modal(`<h3>${b.dataset.d} ${MN[m-1]}</h3><ul class="ls">${by[b.dataset.d].map(s=>`<li>${esc(s.judul)}</li>`).join('')}</ul><button class="btn" onclick="closeM()">Tutup</button>`));
+}
+
+async function loadKartu(){
+  theme(M);$('#kj').textContent=SE[sOf(M)][0];$('#mt').textContent=MN[M-1]+' '+Y;$('#cardbox').innerHTML='<p class="sum">Memuat…</p>';
+  try{renderCard($('#cardbox'),await api('card',T,null,ymS(Y,M)),Y,M)}catch(e){err(e)}
+}
+$('#pv').onclick=()=>{M--;if(M<1){M=12;Y--}loadKartu()};
+$('#nx').onclick=()=>{M++;if(M>12){M=1;Y++}loadKartu()};
+
+let PT=null,DN=new Set();
+async function loadMinta(){
+  theme(now.getMonth()+1);const b=$('#mbox');b.innerHTML='<p class="sum">Memuat…</p>';
+  try{const [r,d,hl]=await Promise.all([api('myRequest',T),api('card',T,null,ymS(now.getFullYear(),now.getMonth()+1)),H||api('hafalanList',T)]);
+    H=hl;DN=new Set(d.done);r?showKode(r):pilihHafalan()}catch(e){err(e)}
+}
+function pilihHafalan(){
+  const b=$('#mbox');
+  b.innerHTML='<h2 style="text-align:center">Hafalan mana yang sudah kamu kuasai?</h2><input id="mq" placeholder="Cari hafalan" style="margin-top:12px"><div id="ml"></div>';
+  const draw=()=>{const q=$('#mq').value.toLowerCase(),G={};
+    H.filter(x=>x.judul.toLowerCase().includes(q)).forEach(x=>(G[x.kategori||'Lainnya']=G[x.kategori||'Lainnya']||[]).push(x));
+    $('#ml').innerHTML=Object.keys(G).map(k=>`<h4>${esc(k)}<small>${G[k].filter(x=>DN.has(x.judul)).length}/${G[k].length} selesai</small></h4>`+G[k].map(x=>DN.has(x.judul)?`<div class="row done">${esc(x.judul)}<span>✓ Selesai</span></div>`:`<button class="row" data-j="${esc(x.judul)}">${esc(x.judul)}<span>Minta kode</span></button>`).join('')).join('')||'<p class="sum">Tidak ada hafalan yang cocok.</p>';
+    document.querySelectorAll('#ml [data-j]').forEach(r=>r.onclick=async()=>{try{showKode(await api('requestStamp',T,r.dataset.j))}catch(e){err(e)}})};
+  $('#mq').oninput=draw;draw();
+}
+function showKode(r){
+  clearInterval(PT);const dl=Date.now()+r.sisa*1000;let n=0,busy=false;
+  $('#mbox').innerHTML=`<p class="hint">Tunjukkan kode ini ke sensei untuk dites.</p><div class="kode">${r.kode.split('').map(c=>`<span>${c}</span>`).join('')}</div><div id="qrk"></div><p class="sum"><b>${esc(r.judul)}</b></p><p class="sum" id="sisa"></p><button class="btn ghost" id="bt" style="margin-top:18px">Batalkan / ganti hafalan</button>`;
+  if(window.QRCode)new QRCode($('#qrk'),{text:r.kode,width:176,height:176,colorDark:'#1c1a18',colorLight:'#ffffff'});
+  $('#bt').onclick=async()=>{clearInterval(PT);try{await api('cancelRequest',T)}catch(e){}loadMinta()};
+  PT=setInterval(async()=>{
+    const s=Math.max(0,Math.round((dl-Date.now())/1000));$('#sisa').textContent='Berlaku '+Math.floor(s/60)+':'+String(s%60).padStart(2,'0');
+    if(++n%3||busy)return;busy=true;
+    try{if(!(await api('myRequest',T))){clearInterval(PT);const d=await api('card',T,null,ymS(now.getFullYear(),now.getMonth()+1));
+      if(d.done.includes(r.judul)){boom();toast('Stamp diterima!')}else toast('Kode sudah kedaluwarsa.');loadMinta()}}catch(e){}
+    busy=false},1000);
+}
+let QS=null,scanBusy=false;
+async function cekKode(c){
+  try{const r=await api('lookupCode',T,c);
+    modal(`<h3>Kode ${esc(r.kode)}</h3><p>${esc(r.nama)}<br><b>${esc(r.judul)}</b></p><button class="btn" id="ok">Beri stamp</button><button class="btn ghost" onclick="closeM()">Batal</button>`);
+    $('#ok').onclick=async()=>{$('#ok').disabled=true;try{const x=await api('confirmCode',T,r.kode);closeM();boom();toast('Stamp diberikan ke '+x.nama);$('#mc').value=''}catch(e2){closeM();err(e2)}};
+  }catch(x){err(x)}
+}
+$('#mf').onsubmit=e=>{e.preventDefault();cekKode($('#mc').value)};
+async function startScan(){
+  $('#sn').textContent='';
+  try{QS=QS||new Html5Qrcode('reader');
+    await QS.start({facingMode:'environment'},{fps:10,qrbox:{width:220,height:220}},t=>{if(scanBusy)return;scanBusy=true;stopScan().then(()=>scanBusy=false);cekKode(t)},()=>{});
+    $('#cam').textContent='Tutup kamera';$('#cam').dataset.on=1}
+  catch(e){$('#sn').textContent='Kamera tidak bisa dibuka. Izinkan akses kamera di browser, atau ketik kodenya.'}
+}
+async function stopScan(){try{if(QS&&QS.isScanning)await QS.stop()}catch(e){}$('#cam').textContent='Scan QR';delete $('#cam').dataset.on}
+$('#cam').onclick=()=>$('#cam').dataset.on?stopScan():startScan();
+
+async function loadSiswa(){
+  theme(now.getMonth()+1);const b=$('#slist');b.innerHTML='<p class="sum">Memuat…</p>';
+  try{const L=await api('students',T);
+    const draw=q=>{b.innerHTML=L.filter(s=>s.nama.toLowerCase().includes(q)).map((s,i)=>`<button class="row" data-i="${i}">${esc(s.nama)}</button>`).join('')||'<p class="sum">Tidak ada siswa.</p>';
+      const F=L.filter(s=>s.nama.toLowerCase().includes(q));b.querySelectorAll('.row').forEach(r=>r.onclick=()=>openStudent(F[r.dataset.i]))};
+    draw('');$('#sq').oninput=e=>draw(e.target.value.toLowerCase());
+  }catch(e){err(e)}
+}
+
+async function openStudent(s){
+  try{
+    CUR=s;$('#sv').hidden=false;$('#svn').textContent=s.nama;$('#svl').innerHTML='<p class="sum">Memuat…</p>';$('#svc').innerHTML='';$('#hq').value='';
+    [H,CD]=await Promise.all([H||api('hafalanList',T),api('card',T,s.username,ymS(now.getFullYear(),now.getMonth()+1))]);
+    theme(now.getMonth()+1);drawStudent();
+  }catch(e){err(e);$('#sv').hidden=true}
+}
+function drawStudent(fresh){
+  renderCard($('#svc'),CD,now.getFullYear(),now.getMonth()+1,fresh);
+  const q=$('#hq').value.toLowerCase(),done=new Set(CD.done),G={};
+  H.filter(h=>h.judul.toLowerCase().includes(q)).forEach(h=>(G[h.kategori||'Lainnya']=G[h.kategori||'Lainnya']||[]).push(h));
+  $('#svl').innerHTML=Object.keys(G).map(k=>`<h4>${esc(k)}</h4>`+G[k].map(h=>done.has(h.judul)?`<div class="row done">${esc(h.judul)}<span>✓ Selesai</span></div>`:`<button class="row" data-j="${esc(h.judul)}">${esc(h.judul)}<span>Beri stamp</span></button>`).join('')).join('')||'<p class="sum">Tidak ada hafalan yang cocok.</p>';
+  document.querySelectorAll('#svl [data-j]').forEach(b=>b.onclick=()=>confirmStamp(b.dataset.j));
+}
+$('#hq').oninput=()=>drawStudent();
+$('#sb').onclick=()=>{$('#sv').hidden=true};
+
+function confirmStamp(j){
+  modal(`<h3>Beri stamp?</h3><p>${esc(CUR.nama)}<br><b>${esc(j)}</b></p><button class="btn" id="ok">Beri stamp</button><button class="btn ghost" onclick="closeM()">Batal</button>`);
+  $('#ok').onclick=async()=>{
+    $('#ok').disabled=true;
+    try{await api('giveStamp',T,CUR.username,j);closeM();boom();
+      CD=await api('card',T,CUR.username,ymS(now.getFullYear(),now.getMonth()+1));drawStudent(now.getDate())}
+    catch(e){closeM();err(e)}
+  };
+}
+function boom(){const b=$('#boom');b.innerHTML=`<span class="hk">${SE[sOf(now.getMonth()+1)][1]}</span><p>押印しました！</p>`;b.hidden=false;setTimeout(()=>b.hidden=true,1500)}
+
+function go(t){
+  clearInterval(PT);stopScan();document.querySelectorAll('.pn').forEach(p=>p.hidden=p.id!='p-'+t);
+  document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t==t));
+  ({kartu:loadKartu,minta:loadMinta,kode:()=>theme(now.getMonth()+1),siswa:loadSiswa})[t]();
+}
+function enter(){
+  $('#login').hidden=true;$('#app').hidden=false;$('#who').textContent=ME.nama;$('#role').textContent=ME.role=='sensei'?'Sensei 先生':'Siswa 生徒';
+  const L=TABS[ME.role]||TABS.siswa;$('#tabs').innerHTML=L.map(t=>`<button data-t="${t[0]}"><b>${t[1]}</b>${t[2]}</button>`).join('');
+  $('#tabs').querySelectorAll('button').forEach(b=>b.onclick=()=>go(b.dataset.t));go(L[0][0]);
+}
+$('#lf').onsubmit=async e=>{e.preventDefault();const b=$('#lb');b.disabled=true;
+  try{const r=await api('login',$('#u').value,$('#pn').value);T=r.token;ME=r.me;store.set(T);enter()}catch(x){err(x)}b.disabled=false};
+$('#out').onclick=()=>{store.set(null);T=ME=H=null;$('#sv').hidden=true;$('#app').hidden=true;$('#login').hidden=false;$('#pn').value=''};
+
+(async()=>{theme(M);T=store.get();
+  if(T){try{ME=await api('me',T);enter();return}catch(e){store.set(null)}}
+  $('#login').hidden=false})();
+</script>
+</body>
+</html>
