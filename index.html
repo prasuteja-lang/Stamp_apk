@@ -20,7 +20,7 @@ h1,h2,h3,.kj,.hk{font-family:'Shippori Mincho',serif}
 #fx{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:0}
 #fx span{position:absolute;top:-30px;opacity:.45;animation:fall linear infinite}
 @keyframes fall{to{transform:translateY(110vh) rotate(360deg)}}
-#login,#app>*{position:relative;z-index:1}
+#login,#app>*:not(nav){position:relative;z-index:1}
 #login{min-height:100vh;display:grid;align-content:center;justify-items:center;gap:10px;padding:24px;text-align:center}
 .seal{width:84px;height:84px;display:grid;place-items:center;font:800 44px 'Shippori Mincho',serif;color:var(--paper);background:var(--ink);border-radius:50%;box-shadow:0 0 0 4px var(--bg),0 0 0 6px var(--ink);transform:rotate(-8deg)}
 h1{font-size:34px;color:var(--ink);letter-spacing:.08em}
@@ -80,6 +80,8 @@ nav button.on{opacity:1;color:var(--ink)}
 #boom .hk{position:static;width:190px;height:190px;font-size:96px;background:var(--paper);animation:press .5s cubic-bezier(.2,1.5,.4,1) both}
 #boom p{position:absolute;bottom:30%;font:800 22px 'Shippori Mincho',serif;color:var(--ink)}
 #toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%);z-index:20;background:#27231f;color:#fff;padding:10px 16px;border-radius:12px;max-width:88%;text-align:center}
+@keyframes rot{to{transform:rotate(360deg)}}
+nav button.spin b{animation:rot .8s linear infinite}
 @media(prefers-reduced-motion:reduce){#fx{display:none}*{animation:none!important}}
 </style>
 </head>
@@ -139,8 +141,22 @@ const sOf=m=>m==12||m<3?'fuyu':m<6?'haru':m<9?'natsu':'aki';
 const now=new Date();let T=null,ME=null,H=null,CD=null,CUR=null,QR=null,Y=now.getFullYear(),M=now.getMonth()+1;
 const ymS=(y,m)=>y+'-'+String(m).padStart(2,'0');
 const API='https://script.google.com/macros/s/AKfycbwQ1Nopuf9Zl3vVIfnFctjBN3ylBKOH0UfoUSYSLE5Ieqj0oguqbSa1Dh2JQ4RePDaOmw/exec';
-const api=async(fn,...args)=>{let j;try{const r=await fetch(API,{method:'POST',body:JSON.stringify({fn,args})});j=await r.json()}catch(e){throw new Error('Tidak bisa terhubung. Periksa internet Anda.')}if(!j.ok)throw new Error(j.error);return j.data};
+const api=async(fn,...args)=>{let j;try{const r=await fetch(API,{method:'POST',body:JSON.stringify({fn,args})});j=await r.json()}catch(e){throw new Error('Tidak bisa terhubung. Periksa internet Anda.')}if(!j.ok){if(/^Sesi habis/.test(j.error)&&T&&fn!=='login')setTimeout(logout,0);throw new Error(j.error)}return j.data};
 const store={get:()=>{try{return localStorage.getItem('stk')}catch(e){return null}},set:v=>{try{v?localStorage.setItem('stk',v):localStorage.removeItem('stk')}catch(e){}}};
+const meStore={get:()=>{try{return JSON.parse(localStorage.getItem('stm'))}catch(e){return null}},set:v=>{try{v?localStorage.setItem('stm',JSON.stringify(v)):localStorage.removeItem('stm')}catch(e){}}};
+/* cache lokal (semi-offline): tampilkan data lama dulu, lalu perbarui dari server */
+const CK='stc:';
+const cacheGet=k=>{try{return JSON.parse(localStorage.getItem(CK+k))}catch(e){return null}};
+const cacheSet=(k,v)=>{try{localStorage.setItem(CK+k,JSON.stringify(v))}catch(e){}};
+const cacheClear=()=>{try{Object.keys(localStorage).filter(k=>k.indexOf(CK)==0).forEach(k=>localStorage.removeItem(k))}catch(e){}};
+const ck=(fn,args)=>(ME?ME.username:'')+'|'+fn+'|'+JSON.stringify(args.slice(1));
+async function apiS(fn,args,cb){
+  const k=ck(fn,args),old=cacheGet(k);
+  if(old!==null&&cb)cb(old);
+  try{const d=await api(fn,...args);if(old===null||JSON.stringify(d)!==JSON.stringify(old)){cacheSet(k,d);cb&&cb(d)}return d}
+  catch(e){if(old!==null)return old;throw e}
+}
+async function apiF(fn,args){const d=await api(fn,...args);cacheSet(ck(fn,args),d);return d}
 function toast(t){let e=$('#toast');if(!e){e=document.createElement('div');e.id='toast';document.body.append(e)}e.textContent=t;e.hidden=false;clearTimeout(e.t);e.t=setTimeout(()=>e.hidden=true,3500)}
 const err=e=>toast(String((e&&e.message)||e).replace(/^Error:\s*/,''));
 function theme(m){const s=sOf(m);document.body.dataset.s=s;const fx=$('#fx');fx.innerHTML='';for(let i=0;i<10;i++){const p=document.createElement('span');p.textContent=SE[s][2];p.style.cssText=`left:${Math.random()*100}%;animation-duration:${9+Math.random()*8}s;animation-delay:-${Math.random()*12}s;font-size:${12+Math.random()*12}px`;fx.append(p)}}
@@ -157,17 +173,22 @@ function renderCard(box,d,y,m,fresh){
 }
 
 async function loadKartu(){
-  theme(M);$('#kj').textContent=SE[sOf(M)][0];$('#mt').textContent=MN[M-1]+' '+Y;$('#cardbox').innerHTML='<p class="sum">Memuat…</p>';
-  try{renderCard($('#cardbox'),await api('card',T,null,ymS(Y,M)),Y,M)}catch(e){err(e)}
+  theme(M);$('#kj').textContent=SE[sOf(M)][0];$('#mt').textContent=MN[M-1]+' '+Y;
+  const y=Y,m=M,box=$('#cardbox'),ym=ymS(y,m);
+  if(cacheGet(ck('card',[T,null,ym]))===null)box.innerHTML='<p class="sum">Memuat…</p>';
+  try{await apiS('card',[T,null,ym],d=>{if(y==Y&&m==M)renderCard(box,d,y,m)})}catch(e){err(e)}
 }
 $('#pv').onclick=()=>{M--;if(M<1){M=12;Y--}loadKartu()};
 $('#nx').onclick=()=>{M++;if(M>12){M=1;Y++}loadKartu()};
 
 let PT=null,DN=new Set();
 async function loadMinta(){
-  theme(now.getMonth()+1);const b=$('#mbox');b.innerHTML='<p class="sum">Memuat…</p>';
-  try{const [r,d,hl]=await Promise.all([api('myRequest',T),api('card',T,null,ymS(now.getFullYear(),now.getMonth()+1)),H||api('hafalanList',T)]);
-    H=hl;DN=new Set(d.done);r?showKode(r):pilihHafalan()}catch(e){err(e)}
+  theme(now.getMonth()+1);const b=$('#mbox'),ym=ymS(now.getFullYear(),now.getMonth()+1);
+  const cd=cacheGet(ck('card',[T,null,ym])),ch=cacheGet(ck('hafalanList',[T]));
+  if(cd&&ch){H=ch;DN=new Set(cd.done);pilihHafalan()}else b.innerHTML='<p class="sum">Memuat…</p>';
+  try{const [r,d,hl]=await Promise.all([api('myRequest',T),apiS('card',[T,null,ym]),apiS('hafalanList',[T])]);
+    H=hl;DN=new Set(d.done);
+    if(r)showKode(r);else if(!cd||!ch||JSON.stringify([d.done,hl])!==JSON.stringify([cd.done,ch]))pilihHafalan()}catch(e){err(e)}
 }
 function pilihHafalan(){
   const b=$('#mbox');
@@ -186,7 +207,7 @@ function showKode(r){
   PT=setInterval(async()=>{
     const s=Math.max(0,Math.round((dl-Date.now())/1000));$('#sisa').textContent='Berlaku '+Math.floor(s/60)+':'+String(s%60).padStart(2,'0');
     if(++n%3||busy)return;busy=true;
-    try{if(!(await api('myRequest',T))){clearInterval(PT);const d=await api('card',T,null,ymS(now.getFullYear(),now.getMonth()+1));
+    try{if(!(await api('myRequest',T))){clearInterval(PT);const d=await apiF('card',[T,null,ymS(now.getFullYear(),now.getMonth()+1)]);
       if(d.done.includes(r.judul)){boom();toast('Stamp diterima!')}else toast('Kode sudah kedaluwarsa.');loadMinta()}}catch(e){}
     busy=false},1000);
 }
@@ -209,20 +230,25 @@ async function stopScan(){try{if(QS&&QS.isScanning)await QS.stop()}catch(e){}$('
 $('#cam').onclick=()=>$('#cam').dataset.on?stopScan():startScan();
 
 async function loadSiswa(){
-  theme(now.getMonth()+1);const b=$('#slist');b.innerHTML='<p class="sum">Memuat…</p>';
-  try{const L=await api('students',T);
-    const draw=q=>{b.innerHTML=L.filter(s=>s.nama.toLowerCase().includes(q)).map((s,i)=>`<button class="row" data-i="${i}">${esc(s.nama)}</button>`).join('')||'<p class="sum">Tidak ada siswa.</p>';
-      const F=L.filter(s=>s.nama.toLowerCase().includes(q));b.querySelectorAll('.row').forEach(r=>r.onclick=()=>openStudent(F[r.dataset.i]))};
-    draw('');$('#sq').oninput=e=>draw(e.target.value.toLowerCase());
-  }catch(e){err(e)}
+  theme(now.getMonth()+1);const b=$('#slist');b.innerHTML='<p class="sum">Memuat…</p>';let L=[];
+  const draw=()=>{const q=$('#sq').value.toLowerCase(),F=L.filter(s=>s.nama.toLowerCase().includes(q));
+    b.innerHTML=F.map((s,i)=>`<button class="row" data-i="${i}">${esc(s.nama)}</button>`).join('')||'<p class="sum">Tidak ada siswa.</p>';
+    b.querySelectorAll('.row').forEach(r=>r.onclick=()=>openStudent(F[r.dataset.i]))};
+  $('#sq').oninput=draw;
+  try{await apiS('students',[T],d=>{L=d;draw()})}catch(e){err(e)}
 }
 
 async function openStudent(s){
+  const ym=ymS(now.getFullYear(),now.getMonth()+1);
+  CUR=s;$('#sv').hidden=false;$('#svn').textContent=s.nama;$('#svc').innerHTML='';$('#hq').value='';
+  CD=cacheGet(ck('card',[T,s.username,ym]));H=cacheGet(ck('hafalanList',[T]))||H;
+  if(CD&&H){theme(now.getMonth()+1);drawStudent()}else $('#svl').innerHTML='<p class="sum">Memuat…</p>';
   try{
-    CUR=s;$('#sv').hidden=false;$('#svn').textContent=s.nama;$('#svl').innerHTML='<p class="sum">Memuat…</p>';$('#svc').innerHTML='';$('#hq').value='';
-    [H,CD]=await Promise.all([H||api('hafalanList',T),api('card',T,s.username,ymS(now.getFullYear(),now.getMonth()+1))]);
-    theme(now.getMonth()+1);drawStudent();
-  }catch(e){err(e);$('#sv').hidden=true}
+    const [hl,cd]=await Promise.all([apiS('hafalanList',[T]),apiS('card',[T,s.username,ym])]);
+    if(CUR!==s||$('#sv').hidden)return;
+    const same=CD&&H&&JSON.stringify(cd)===JSON.stringify(CD)&&JSON.stringify(hl)===JSON.stringify(H);
+    H=hl;CD=cd;if(!same){theme(now.getMonth()+1);drawStudent()}
+  }catch(e){err(e);if(!(CD&&H))$('#sv').hidden=true}
 }
 function drawStudent(fresh){
   renderCard($('#svc'),CD,now.getFullYear(),now.getMonth()+1,fresh);
@@ -239,28 +265,41 @@ function confirmStamp(j){
   $('#ok').onclick=async()=>{
     $('#ok').disabled=true;
     try{await api('giveStamp',T,CUR.username,j);closeM();boom();
-      CD=await api('card',T,CUR.username,ymS(now.getFullYear(),now.getMonth()+1));drawStudent(now.getDate())}
+      CD=await apiF('card',[T,CUR.username,ymS(now.getFullYear(),now.getMonth()+1)]);drawStudent(now.getDate())}
     catch(e){closeM();err(e)}
   };
 }
 function boom(){const b=$('#boom');b.innerHTML=`<span class="hk">${SE[sOf(now.getMonth()+1)][1]}</span><p>押印しました！</p>`;b.hidden=false;setTimeout(()=>b.hidden=true,1500)}
 
+let TAB='';
+async function muatUlang(){
+  const b=$('#rf');if(!b||b.classList.contains('spin'))return;b.classList.add('spin');
+  try{await api('refresh',T)}catch(e){}
+  cacheClear();H=null;
+  try{await go(TAB);toast('Data diperbarui')}catch(e){err(e)}
+  b.classList.remove('spin');
+}
 function go(t){
   clearInterval(PT);stopScan();document.querySelectorAll('.pn').forEach(p=>p.hidden=p.id!='p-'+t);
   document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t==t));
-  ({kartu:loadKartu,minta:loadMinta,kode:()=>theme(now.getMonth()+1),siswa:loadSiswa})[t]();
+  TAB=t;return ({kartu:loadKartu,minta:loadMinta,kode:()=>theme(now.getMonth()+1),siswa:loadSiswa})[t]();
 }
 function enter(){
   $('#login').hidden=true;$('#app').hidden=false;$('#who').textContent=ME.nama;$('#role').textContent=ME.role=='sensei'?'Sensei 先生':'Siswa 生徒';
-  const L=TABS[ME.role]||TABS.siswa;$('#tabs').innerHTML=L.map(t=>`<button data-t="${t[0]}"><b>${t[1]}</b>${t[2]}</button>`).join('');
-  $('#tabs').querySelectorAll('button').forEach(b=>b.onclick=()=>go(b.dataset.t));go(L[0][0]);
+  const L=TABS[ME.role]||TABS.siswa;$('#tabs').innerHTML=L.map(t=>`<button data-t="${t[0]}"><b>${t[1]}</b>${t[2]}</button>`).join('')+'<button id="rf"><b>↻</b>Muat ulang</button>';
+  $('#tabs').querySelectorAll('button[data-t]').forEach(b=>b.onclick=()=>go(b.dataset.t));$('#rf').onclick=muatUlang;go(L[0][0]);
 }
 $('#lf').onsubmit=async e=>{e.preventDefault();const b=$('#lb');b.disabled=true;
-  try{const r=await api('login',$('#u').value,$('#pn').value);T=r.token;ME=r.me;store.set(T);enter()}catch(x){err(x)}b.disabled=false};
-$('#out').onclick=()=>{store.set(null);T=ME=H=null;$('#sv').hidden=true;$('#app').hidden=true;$('#login').hidden=false;$('#pn').value=''};
+  try{const r=await api('login',$('#u').value,$('#pn').value);T=r.token;ME=r.me;store.set(T);meStore.set(ME);enter()}catch(x){err(x)}b.disabled=false};
+function logout(){cacheClear();store.set(null);meStore.set(null);T=ME=H=CD=null;clearInterval(PT);stopScan();$('#sv').hidden=true;$('#app').hidden=true;$('#login').hidden=false;$('#pn').value=''}
+$('#out').onclick=logout;
 
 (async()=>{theme(M);T=store.get();
-  if(T){try{ME=await api('me',T);enter();return}catch(e){store.set(null)}}
+  if(T){
+    const m=meStore.get();
+    if(m){ME=m;enter();api('me',T).then(x=>{ME=x;meStore.set(x)}).catch(()=>{});return}
+    try{ME=await api('me',T);meStore.set(ME);enter();return}catch(e){store.set(null)}
+  }
   $('#login').hidden=false})();
 </script>
 </body>
