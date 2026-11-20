@@ -85,13 +85,16 @@ nav button.on{opacity:1;color:var(--ink)}
 .ac{display:flex;gap:8px;align-items:center;flex-shrink:0}
 .ac button{font:700 13px 'Zen Maru Gothic',sans-serif;padding:7px 10px;border-radius:9px;cursor:pointer;border:1.5px solid var(--ink);background:transparent;color:var(--ink)}
 .ac button.pri{background:var(--ink);color:#fff}
-#kv{position:fixed;inset:0;z-index:9;background:var(--bg);overflow:auto;padding:0 16px 40px}
-#kv .in{max-width:520px;margin:0 auto}
-.ki{position:relative;background:var(--paper);border:1px solid color-mix(in srgb,var(--ink) 25%,transparent);border-radius:12px;padding:12px 14px 12px 46px;margin-top:8px;cursor:pointer}
-.ki i{position:absolute;left:14px;top:14px;font:700 12px 'Zen Maru Gothic',sans-serif;font-style:normal;opacity:.5}
-.kjp{font:800 21px 'Shippori Mincho',serif;color:var(--ink)}
-.kro{opacity:.75;font-size:14px}
-.kid{font-size:15px}
+#kv{position:fixed;inset:0;z-index:9;background:var(--bg);overflow:auto;padding:0 8px 40px}
+#kv .in{max-width:900px;margin:0 auto}
+.ktw{background:var(--paper);border:1px solid color-mix(in srgb,var(--ink) 25%,transparent);border-radius:12px;overflow:hidden;margin-top:8px}
+.kt{width:100%;border-collapse:collapse;table-layout:fixed}
+.kt th{position:sticky;top:0;z-index:1;background:var(--soft);color:var(--ink);text-align:left;font:800 12px 'Zen Maru Gothic',sans-serif;padding:7px 6px;border-bottom:2px solid var(--ink)}
+.kt td{padding:8px 6px;vertical-align:top;border-bottom:1px solid color-mix(in srgb,var(--ink) 15%,transparent);word-break:break-word;font-size:14px;line-height:1.35;cursor:pointer}
+.kt tr:nth-child(even) td{background:color-mix(in srgb,var(--soft) 35%,transparent)}
+.kt td.n{text-align:center;opacity:.55;font-size:12px;padding-left:2px;padding-right:2px}
+.kt .kjp{font:800 17px 'Shippori Mincho',serif;color:var(--ink)}
+.kt .kro{opacity:.8;font-size:13px}
 #kv.hr .kro:not(.show),#kv.ha .kid:not(.show){filter:blur(7px);user-select:none}
 .tot{display:flex;justify-content:space-between;align-items:center;gap:12px;background:var(--ink);color:#fff;border-radius:14px;padding:12px 16px;margin-bottom:14px}
 .tot small{display:block;opacity:.8;font-size:12px}
@@ -326,9 +329,9 @@ $('#hq').oninput=()=>drawStudent();
 let KT='';
 function drawKotoba(tema,L){
   if(KT!==tema)return;
-  $('#kinfo').textContent=L.length?L.length+' kotoba · ketuk kartu untuk menampilkan yang disembunyikan':'';
-  $('#klist').innerHTML=L.map(x=>`<div class="ki"><i>${esc(x.no)}</i><div class="kjp">${esc(x.jp)}</div><div class="kro">${esc(x.ro)}</div><div class="kid">${esc(x.id)}</div></div>`).join('')||'<p class="sum">Belum ada kotoba untuk tema ini di tab Kotoba.</p>';
-  $('#klist').querySelectorAll('.ki').forEach(c=>c.onclick=()=>c.querySelectorAll('.kro,.kid').forEach(e=>e.classList.toggle('show')));
+  $('#kinfo').textContent=L.length?L.length+' kotoba · ketuk baris untuk menampilkan yang disembunyikan':'';
+  $('#klist').innerHTML=L.length?`<div class="ktw"><table class="kt"><colgroup><col style="width:34px"><col style="width:32%"><col style="width:30%"><col></colgroup><thead><tr><th>No</th><th>Jepang</th><th>Romaji</th><th>Arti</th></tr></thead><tbody>${L.map(x=>`<tr><td class="n">${esc(x.no)}</td><td class="kjp">${esc(x.jp)}</td><td class="kro">${esc(x.ro)}</td><td class="kid">${esc(x.id)}</td></tr>`).join('')}</tbody></table></div>`:'<p class="sum">Belum ada kotoba untuk tema ini di tab Kotoba.</p>';
+  $('#klist').querySelectorAll('tbody tr').forEach(c=>c.onclick=()=>c.querySelectorAll('.kro,.kid').forEach(e=>e.classList.toggle('show')));
 }
 async function bukaKotoba(tema){
   KT=tema;$('#kv').hidden=false;$('#kv').scrollTop=0;$('#ktitle').textContent=tema;$('#kinfo').textContent='';$('#klist').innerHTML='<p class="sum">Memuat…</p>';
