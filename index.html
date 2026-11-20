@@ -93,6 +93,9 @@ nav button.on{opacity:1;color:var(--ink)}
 .kro{opacity:.75;font-size:14px}
 .kid{font-size:15px}
 #kv.hr .kro:not(.show),#kv.ha .kid:not(.show){filter:blur(7px);user-select:none}
+.tot{display:flex;justify-content:space-between;align-items:center;gap:12px;background:var(--ink);color:#fff;border-radius:14px;padding:12px 16px;margin-bottom:14px}
+.tot small{display:block;opacity:.8;font-size:12px}
+.tot b{font:800 30px 'Shippori Mincho',serif;line-height:1}
 .seg{display:flex;gap:8px;margin:4px 0 14px}
 .seg button{flex:1;padding:11px 6px;border-radius:12px;border:1.5px solid var(--ink);background:var(--paper);color:var(--ink);font:700 14px 'Zen Maru Gothic',sans-serif;cursor:pointer}
 .seg button.on{background:var(--ink);color:#fff}
@@ -192,12 +195,13 @@ function theme(m){const s=sOf(m);document.body.dataset.s=s;const fx=$('#fx');fx.
 function modal(h){const m=$('#modal');m.innerHTML='<div>'+h+'</div>';m.hidden=false;m.onclick=e=>{if(e.target===m)closeM()}}
 function closeM(){$('#modal').hidden=true}
 
+const banner=(n,t)=>`<div class="tot"><div>Total kotoba dihafal<small>${t} tema selesai</small></div><b>${n}</b></div>`;
 function renderCard(box,d,y,m,fresh){
   const n=new Date(y,m,0).getDate(),by={},g=SE[sOf(m)][1],td=new Date(),tdy=td.getFullYear()==y&&td.getMonth()+1==m?td.getDate():0;
   d.month.forEach(s=>{const k=+s.tanggal.slice(8);(by[k]=by[k]||[]).push(s)});
   let h='<div class="grid">';
   for(let i=1;i<=n;i++){const l=by[i];h+=`<button class="c${i==tdy?' today':''}" ${l?`data-d="${i}"`:'disabled'}><i>${i}</i>${l?`<span class="hk${fresh==i?' new':''}" style="--rot:${(i*37%13)-6}deg">${g}</span>${l.length>1?`<b>${l.length}</b>`:''}`:''}</button>`}
-  box.innerHTML=h+`</div><p class="sum"><b>${d.month.length}</b> stamp bulan ini · <b>${d.total}</b> hafalan selesai · <b>${d.kaiwa||0}</b> kaiwa</p>`;
+  box.innerHTML=banner(d.kotoba||0,d.total)+h+`</div><p class="sum"><b>${d.month.length}</b> stamp bulan ini · <b>${d.total}</b> hafalan selesai · <b>${d.kaiwa||0}</b> kaiwa</p>`;
   box.querySelectorAll('[data-d]').forEach(b=>b.onclick=()=>modal(`<h3>${b.dataset.d} ${MN[m-1]}</h3><ul class="ls">${by[b.dataset.d].map(s=>`<li>${s.jenis=='kaiwa'?'<b>Kaiwa '+esc(s.jam||'')+'</b> · ':''}${esc(s.judul)}</li>`).join('')}</ul><button class="btn" onclick="closeM()">Tutup</button>`));
 }
 
@@ -242,10 +246,10 @@ function formKaiwa(){
 }
 function pilihHafalan(){
   const b=$('#mb');
-  b.innerHTML='<h2 style="text-align:center">Hafalan mana yang sudah kamu kuasai?</h2><input id="mq" placeholder="Cari hafalan" style="margin-top:12px"><div id="ml"></div>';
+  b.innerHTML=banner(H.filter(x=>DN.has(x.judul)).reduce((a,x)=>a+(x.jumlah||0),0),DN.size)+'<h2 style="text-align:center">Hafalan mana yang sudah kamu kuasai?</h2><input id="mq" placeholder="Cari hafalan" style="margin-top:12px"><div id="ml"></div>';
   const draw=()=>{const q=$('#mq').value.toLowerCase(),G={};
     H.filter(x=>x.judul.toLowerCase().includes(q)).forEach(x=>(G[x.kategori||'Lainnya']=G[x.kategori||'Lainnya']||[]).push(x));
-    $('#ml').innerHTML=Object.keys(G).map(k=>`<h4>${esc(k)}<small>${G[k].filter(x=>DN.has(x.judul)).length}/${G[k].length} selesai</small></h4>`+G[k].map(x=>DN.has(x.judul)?`<div class="row done">${esc(x.judul)}<span>✓ Selesai</span></div>`:`<button class="row" data-j="${esc(x.judul)}">${esc(x.judul)}<span>Minta kode</span></button>`).join('')).join('')||'<p class="sum">Tidak ada hafalan yang cocok.</p>';
+    $('#ml').innerHTML=Object.keys(G).map(k=>`<h4>${esc(k)}<small>${G[k].filter(x=>DN.has(x.judul)).length}/${G[k].length} selesai</small></h4>`+G[k].map(x=>DN.has(x.judul)?`<div class="row done">${esc(x.judul)}<span>✓ Selesai · ${x.jumlah||0} kotoba</span></div>`:`<button class="row" data-j="${esc(x.judul)}">${esc(x.judul)}<span>Minta kode</span></button>`).join('')).join('')||'<p class="sum">Tidak ada hafalan yang cocok.</p>';
     document.querySelectorAll('#ml [data-j]').forEach(r=>r.onclick=async()=>{try{showKode(await api('requestStamp',T,r.dataset.j))}catch(e){err(e)}})};
   $('#mq').oninput=draw;draw();
 }
