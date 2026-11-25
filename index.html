@@ -112,6 +112,8 @@ nav button.on{opacity:1;color:var(--ink)}
 .tb{position:relative;aspect-ratio:1;background:var(--paper);border:1px solid color-mix(in srgb,var(--ink) 25%,transparent);border-radius:10px;padding:0;cursor:pointer}
 .tb.rr{border:2px solid #f5b800}
 .tb small{position:absolute;bottom:1px;right:4px;font:700 10px 'Zen Maru Gothic',sans-serif;opacity:.6}
+.c.rr{background:radial-gradient(circle at 50% 45%,#fff6cf 0%,var(--paper) 78%);border:1px solid #f5b800;box-shadow:0 0 8px rgba(245,184,0,.45)}
+#boom p small{font-size:14px}
 .seg{display:flex;gap:8px;margin:4px 0 14px}
 .seg button{flex:1;padding:11px 6px;border-radius:12px;border:1.5px solid var(--ink);background:var(--paper);color:var(--ink);font:700 14px 'Zen Maru Gothic',sans-serif;cursor:pointer}
 .seg button.on{background:var(--ink);color:#fff}
@@ -223,9 +225,9 @@ function renderCard(box,d,y,m,fresh){
   const n=new Date(y,m,0).getDate(),by={},g=SE[sOf(m)][1],td=new Date(),tdy=td.getFullYear()==y&&td.getMonth()+1==m?td.getDate():0;
   d.month.forEach(s=>{const k=+s.tanggal.slice(8);(by[k]=by[k]||[]).push(s)});
   let h='<div class="grid">';
-  for(let i=1;i<=n;i++){const l=by[i],f=l&&(l.find(x=>x.rare)||l[0]);h+=`<button class="c${i==tdy?' today':''}" ${l?`data-d="${i}"`:'disabled'}><i>${i}</i>${l?`${f.img?simg(f.img,(fresh==i?'new ':'')+(f.rare?'rare':''),(i*37%25)-12,g):`<span class="hk${fresh==i?' new':''}" style="--rot:${(i*37%13)-6}deg">${g}</span>`}${l.length>1?`<b>${l.length}</b>`:''}`:''}</button>`}
+  for(let i=1;i<=n;i++){const l=by[i],f=l&&(l.find(x=>x.rare)||l[0]);h+=`<button class="c${i==tdy?' today':''}${f&&f.rare?' rr':''}" ${l?`data-d="${i}"`:'disabled'}><i>${i}</i>${l?`${f.img?simg(f.img,(fresh==i?'new ':'')+(f.rare?'rare':''),(i*37%25)-12,g):`<span class="hk${fresh==i?' new':''}" style="--rot:${(i*37%13)-6}deg">${g}</span>`}${l.length>1?`<b>${l.length}</b>`:''}`:''}</button>`}
   box.innerHTML=banner(d.kotoba||0,d.total)+h+`</div><p class="sum"><b>${d.month.length}</b> stamp bulan ini · <b>${d.total}</b> hafalan selesai · <b>${d.kaiwa||0}</b> kaiwa</p>`;
-  box.querySelectorAll('[data-d]').forEach(b=>b.onclick=()=>modal(`<h3>${b.dataset.d} ${MN[m-1]}</h3><ul class="ls">${by[b.dataset.d].map(s=>`<li>${s.jenis=='kaiwa'?'<b>Kaiwa '+esc(s.jam||'')+'</b> · ':''}${esc(s.judul)}</li>`).join('')}</ul><button class="btn" onclick="closeM()">Tutup</button>`));
+  box.querySelectorAll('[data-d]').forEach(b=>b.onclick=()=>modal(`<h3>${b.dataset.d} ${MN[m-1]}</h3><ul class="ls">${by[b.dataset.d].map(s=>`<li>${s.rare?'✨ ':''}${s.jenis=='kaiwa'?'<b>Kaiwa '+esc(s.jam||'')+'</b> · ':''}${esc(s.judul)}</li>`).join('')}</ul><button class="btn" onclick="closeM()">Tutup</button>`));
 }
 
 async function loadKartu(){
@@ -286,14 +288,14 @@ function showKode(r){
     if(++n%3||busy)return;busy=true;
     try{if(!(await api('myRequest',T))){clearInterval(PT);const d=await apiF('card',[T,null,r.jenis=='kaiwa'?r.tgl.slice(0,7):ymS(now.getFullYear(),now.getMonth()+1)]);
       const ok=r.jenis=='kaiwa'?d.month.some(s=>s.jenis=='kaiwa'&&s.judul==r.judul&&s.jam==r.jam&&s.tanggal==r.tgl):d.done.includes(r.judul);
-      if(ok){boom(d.lastImg,d.lastRare);toast('Stamp diterima!')}else toast('Kode sudah kedaluwarsa.');loadMinta()}}catch(e){}
+      if(ok){boom(d.lastImg,d.lastRare,d.lastNaik);toast('Stamp diterima!')}else toast('Kode sudah kedaluwarsa.');loadMinta()}}catch(e){}
     busy=false},1000);
 }
 let QS=null,scanBusy=false;
 async function cekKode(c){
   try{const r=await api('lookupCode',T,c);
     modal(`<h3>Kode ${esc(r.kode)}</h3><p>${esc(r.nama)}<br>${r.jenis=='kaiwa'?`<b>Kaiwa Renshuu</b><br>Tema: ${esc(r.judul)}<br>${esc(r.tgl)} · ${esc(r.jam)}`:`<b>${esc(r.judul)}</b>`}</p><button class="btn" id="ok">Beri stamp</button><button class="btn ghost" onclick="closeM()">Batal</button>`);
-    $('#ok').onclick=async()=>{$('#ok').disabled=true;try{const x=await api('confirmCode',T,r.kode);closeM();boom(x.img,x.rare);toast('Stamp diberikan ke '+x.nama);$('#mc').value=''}catch(e2){closeM();err(e2)}};
+    $('#ok').onclick=async()=>{$('#ok').disabled=true;try{const x=await api('confirmCode',T,r.kode);closeM();boom(x.img,x.rare,x.naik);toast('Stamp diberikan ke '+x.nama);$('#mc').value=''}catch(e2){closeM();err(e2)}};
   }catch(x){err(x)}
 }
 $('#mf').onsubmit=e=>{e.preventDefault();cekKode($('#mc').value)};
@@ -374,7 +376,7 @@ function kaiwaSensei(){
   const chk=()=>{const ok=ins.every(i=>i.value.trim());bt.disabled=!ok;$('#skm').textContent=ok?'':'Semua kolom wajib diisi.'};
   ins.forEach(i=>i.oninput=chk);chk();
   bt.onclick=async()=>{bt.disabled=true;const tgl=$('#skt').value,ym=ymS(now.getFullYear(),now.getMonth()+1);
-    try{const gx=await api('giveKaiwa',T,st.username,$('#skh').value.trim(),tgl,$('#skj').value);closeM();boom(gx&&gx.img,gx&&gx.rare);
+    try{const gx=await api('giveKaiwa',T,st.username,$('#skh').value.trim(),tgl,$('#skj').value);closeM();boom(gx&&gx.img,gx&&gx.rare,gx&&gx.naik);
       CD=await apiF('card',[T,st.username,ym]);if(CUR===st)drawStudent(tgl.slice(0,7)==ym?+tgl.slice(8):0)}
     catch(e){closeM();err(e)}};
 }
@@ -383,14 +385,14 @@ function confirmStamp(j){
   modal(`<h3>Beri stamp?</h3><p>${esc(CUR.nama)}<br><b>${esc(j)}</b></p><button class="btn" id="ok">Beri stamp</button><button class="btn ghost" onclick="closeM()">Batal</button>`);
   $('#ok').onclick=async()=>{
     $('#ok').disabled=true;
-    try{const gx=await api('giveStamp',T,CUR.username,j);closeM();boom(gx&&gx.img,gx&&gx.rare);
+    try{const gx=await api('giveStamp',T,CUR.username,j);closeM();boom(gx&&gx.img,gx&&gx.rare,gx&&gx.naik);
       CD=await apiF('card',[T,CUR.username,ymS(now.getFullYear(),now.getMonth()+1)]);drawStudent(now.getDate())}
     catch(e){closeM();err(e)}
   };
 }
 const SND=new Audio('stamp/tuturu_1.mp3');SND.preload='auto';
 function bunyi(){try{SND.currentTime=0;const p=SND.play();if(p&&p.catch)p.catch(()=>{})}catch(e){}}
-function boom(img,rare){bunyi();const b=$('#boom'),g=SE[sOf(now.getMonth()+1)][1];b.className=rare?'rare':'';b.innerHTML=(img?simg(img,rare?'rare':'',-8,g):`<span class="hk">${g}</span>`)+`<p>${rare?'✨ 希少スタンプ！ Stamp langka! ✨':'押印しました！'}</p>`;b.hidden=false;clearTimeout(boom.t);boom.t=setTimeout(()=>b.hidden=true,rare?2800:1500)}
+function boom(img,rare,naik){bunyi();const b=$('#boom'),g=SE[sOf(now.getMonth()+1)][1];b.className=rare?'rare':'';b.innerHTML=(img?simg(img,rare?'rare':'',-8,g):`<span class="hk">${g}</span>`)+`<p>${rare?'✨ 希少スタンプ！ Stamp langka! ✨'+(naik?'<br><small>Stamp lain hari ini ikut naik jadi langka!</small>':''):'押印しました！'}</p>`;b.hidden=false;clearTimeout(boom.t);boom.t=setTimeout(()=>b.hidden=true,rare?(naik?3600:2800):1500)}
 
 const STAMP_BIASA=20,STAMP_LANGKA=[21,22,23]; // samakan dengan JUMLAH_GAMBAR dan GAMBAR_LANGKA di Code.gs
 $('#ujiS').onclick=()=>{
