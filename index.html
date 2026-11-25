@@ -99,6 +99,9 @@ nav button.on{opacity:1;color:var(--ink)}
 .tot{display:flex;justify-content:space-between;align-items:center;gap:12px;background:var(--ink);color:#fff;border-radius:14px;padding:12px 16px;margin-bottom:14px}
 .tot small{display:block;opacity:.8;font-size:12px}
 .tot b{font:800 30px 'Shippori Mincho',serif;line-height:1}
+.hi{--rot:0deg;position:absolute;inset:4px;width:calc(100% - 8px);height:calc(100% - 8px);object-fit:contain;transform:rotate(var(--rot));filter:drop-shadow(0 1px 1.5px rgba(0,0,0,.3));pointer-events:none}
+.hi.new{animation:press .5s cubic-bezier(.2,1.5,.4,1) both}
+#boom .hi{position:static;width:210px;height:210px;animation:press .5s cubic-bezier(.2,1.5,.4,1) both}
 .seg{display:flex;gap:8px;margin:4px 0 14px}
 .seg button{flex:1;padding:11px 6px;border-radius:12px;border:1.5px solid var(--ink);background:var(--paper);color:var(--ink);font:700 14px 'Zen Maru Gothic',sans-serif;cursor:pointer}
 .seg button.on{background:var(--ink);color:#fff}
@@ -199,11 +202,15 @@ function modal(h){const m=$('#modal');m.innerHTML='<div>'+h+'</div>';m.hidden=fa
 function closeM(){$('#modal').hidden=true}
 
 const banner=(n,t)=>`<div class="tot"><div>Total kotoba dihafal<small>${t} tema selesai</small></div><b>${n}</b></div>`;
+const EXT=['png','webp','jpg','jpeg'];let EI=0;
+function simg(i,cls,rot,g){return `<img class="hi ${cls||''}" style="--rot:${rot}deg" src="stamp/${i}.${EXT[EI]}" data-i="${i}" data-e="${EI}" data-g="${g||''}" alt="" onload="EI=+this.dataset.e" onerror="imgErr(this)">`}
+function imgErr(el){const e=+el.dataset.e+1;if(e<EXT.length){el.dataset.e=e;el.src='stamp/'+el.dataset.i+'.'+EXT[e];return}
+  const s=document.createElement('span');s.className='hk';s.textContent=el.dataset.g;s.style.cssText=el.style.cssText;el.replaceWith(s)}
 function renderCard(box,d,y,m,fresh){
   const n=new Date(y,m,0).getDate(),by={},g=SE[sOf(m)][1],td=new Date(),tdy=td.getFullYear()==y&&td.getMonth()+1==m?td.getDate():0;
   d.month.forEach(s=>{const k=+s.tanggal.slice(8);(by[k]=by[k]||[]).push(s)});
   let h='<div class="grid">';
-  for(let i=1;i<=n;i++){const l=by[i];h+=`<button class="c${i==tdy?' today':''}" ${l?`data-d="${i}"`:'disabled'}><i>${i}</i>${l?`<span class="hk${fresh==i?' new':''}" style="--rot:${(i*37%13)-6}deg">${g}</span>${l.length>1?`<b>${l.length}</b>`:''}`:''}</button>`}
+  for(let i=1;i<=n;i++){const l=by[i];h+=`<button class="c${i==tdy?' today':''}" ${l?`data-d="${i}"`:'disabled'}><i>${i}</i>${l?`${l[0].img?simg(l[0].img,fresh==i?'new':'',(i*37%25)-12,g):`<span class="hk${fresh==i?' new':''}" style="--rot:${(i*37%13)-6}deg">${g}</span>`}${l.length>1?`<b>${l.length}</b>`:''}`:''}</button>`}
   box.innerHTML=banner(d.kotoba||0,d.total)+h+`</div><p class="sum"><b>${d.month.length}</b> stamp bulan ini · <b>${d.total}</b> hafalan selesai · <b>${d.kaiwa||0}</b> kaiwa</p>`;
   box.querySelectorAll('[data-d]').forEach(b=>b.onclick=()=>modal(`<h3>${b.dataset.d} ${MN[m-1]}</h3><ul class="ls">${by[b.dataset.d].map(s=>`<li>${s.jenis=='kaiwa'?'<b>Kaiwa '+esc(s.jam||'')+'</b> · ':''}${esc(s.judul)}</li>`).join('')}</ul><button class="btn" onclick="closeM()">Tutup</button>`));
 }
@@ -264,15 +271,16 @@ function showKode(r){
   PT=setInterval(async()=>{
     const s=Math.max(0,Math.round((dl-Date.now())/1000));$('#sisa').textContent='Berlaku '+Math.floor(s/60)+':'+String(s%60).padStart(2,'0');
     if(++n%3||busy)return;busy=true;
-    try{if(!(await api('myRequest',T))){clearInterval(PT);const ok=r.jenis=='kaiwa'?(await apiF('card',[T,null,r.tgl.slice(0,7)])).month.some(s=>s.jenis=='kaiwa'&&s.judul==r.judul&&s.jam==r.jam&&s.tanggal==r.tgl):(await apiF('card',[T,null,ymS(now.getFullYear(),now.getMonth()+1)])).done.includes(r.judul);
-      if(ok){boom();toast('Stamp diterima!')}else toast('Kode sudah kedaluwarsa.');loadMinta()}}catch(e){}
+    try{if(!(await api('myRequest',T))){clearInterval(PT);const d=await apiF('card',[T,null,r.jenis=='kaiwa'?r.tgl.slice(0,7):ymS(now.getFullYear(),now.getMonth()+1)]);
+      const ok=r.jenis=='kaiwa'?d.month.some(s=>s.jenis=='kaiwa'&&s.judul==r.judul&&s.jam==r.jam&&s.tanggal==r.tgl):d.done.includes(r.judul);
+      if(ok){boom(d.lastImg);toast('Stamp diterima!')}else toast('Kode sudah kedaluwarsa.');loadMinta()}}catch(e){}
     busy=false},1000);
 }
 let QS=null,scanBusy=false;
 async function cekKode(c){
   try{const r=await api('lookupCode',T,c);
     modal(`<h3>Kode ${esc(r.kode)}</h3><p>${esc(r.nama)}<br>${r.jenis=='kaiwa'?`<b>Kaiwa Renshuu</b><br>Tema: ${esc(r.judul)}<br>${esc(r.tgl)} · ${esc(r.jam)}`:`<b>${esc(r.judul)}</b>`}</p><button class="btn" id="ok">Beri stamp</button><button class="btn ghost" onclick="closeM()">Batal</button>`);
-    $('#ok').onclick=async()=>{$('#ok').disabled=true;try{const x=await api('confirmCode',T,r.kode);closeM();boom();toast('Stamp diberikan ke '+x.nama);$('#mc').value=''}catch(e2){closeM();err(e2)}};
+    $('#ok').onclick=async()=>{$('#ok').disabled=true;try{const x=await api('confirmCode',T,r.kode);closeM();boom(x.img);toast('Stamp diberikan ke '+x.nama);$('#mc').value=''}catch(e2){closeM();err(e2)}};
   }catch(x){err(x)}
 }
 $('#mf').onsubmit=e=>{e.preventDefault();cekKode($('#mc').value)};
@@ -345,12 +353,12 @@ function confirmStamp(j){
   modal(`<h3>Beri stamp?</h3><p>${esc(CUR.nama)}<br><b>${esc(j)}</b></p><button class="btn" id="ok">Beri stamp</button><button class="btn ghost" onclick="closeM()">Batal</button>`);
   $('#ok').onclick=async()=>{
     $('#ok').disabled=true;
-    try{await api('giveStamp',T,CUR.username,j);closeM();boom();
+    try{const gx=await api('giveStamp',T,CUR.username,j);closeM();boom(gx&&gx.img);
       CD=await apiF('card',[T,CUR.username,ymS(now.getFullYear(),now.getMonth()+1)]);drawStudent(now.getDate())}
     catch(e){closeM();err(e)}
   };
 }
-function boom(){const b=$('#boom');b.innerHTML=`<span class="hk">${SE[sOf(now.getMonth()+1)][1]}</span><p>押印しました！</p>`;b.hidden=false;setTimeout(()=>b.hidden=true,1500)}
+function boom(img){const b=$('#boom'),g=SE[sOf(now.getMonth()+1)][1];b.innerHTML=(img?simg(img,'',-8,g):`<span class="hk">${g}</span>`)+`<p>押印しました！</p>`;b.hidden=false;setTimeout(()=>b.hidden=true,1500)}
 
 let TAB='';
 async function muatUlang(){
