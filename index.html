@@ -108,6 +108,10 @@ nav button.on{opacity:1;color:var(--ink)}
 #boom.rare .hi{filter:drop-shadow(0 0 18px #f5b800) drop-shadow(0 0 6px #fff3b8)}
 #boom p{text-align:center;padding:0 14px}
 #boom.rare p{color:#8a5d00}
+.tg{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;max-height:48vh;overflow:auto;padding:2px}
+.tb{position:relative;aspect-ratio:1;background:var(--paper);border:1px solid color-mix(in srgb,var(--ink) 25%,transparent);border-radius:10px;padding:0;cursor:pointer}
+.tb.rr{border:2px solid #f5b800}
+.tb small{position:absolute;bottom:1px;right:4px;font:700 10px 'Zen Maru Gothic',sans-serif;opacity:.6}
 .seg{display:flex;gap:8px;margin:4px 0 14px}
 .seg button{flex:1;padding:11px 6px;border-radius:12px;border:1.5px solid var(--ink);background:var(--paper);color:var(--ink);font:700 14px 'Zen Maru Gothic',sans-serif;cursor:pointer}
 .seg button.on{background:var(--ink);color:#fff}
@@ -149,6 +153,7 @@ nav button.spin b{animation:rot .8s linear infinite}
     <button class="btn" id="cam">Scan QR</button>
     <p id="sn"></p>
     <form id="mf" style="width:100%;margin-top:14px"><input id="mc" class="kin" maxlength="5" placeholder="•••••" autocapitalize="characters" autocomplete="off" required><button class="btn ghost">Cek kode</button></form>
+    <button class="btn ghost" id="ujiS" style="margin-top:22px">Uji tampilan stamp</button>
   </section>
   <section class="pn" id="p-siswa" hidden>
     <input id="sq" placeholder="Cari nama siswa">
@@ -387,6 +392,12 @@ const SND=new Audio('stamp/tuturu_1.mp3');SND.preload='auto';
 function bunyi(){try{SND.currentTime=0;const p=SND.play();if(p&&p.catch)p.catch(()=>{})}catch(e){}}
 function boom(img,rare){bunyi();const b=$('#boom'),g=SE[sOf(now.getMonth()+1)][1];b.className=rare?'rare':'';b.innerHTML=(img?simg(img,rare?'rare':'',-8,g):`<span class="hk">${g}</span>`)+`<p>${rare?'✨ 希少スタンプ！ Stamp langka! ✨':'押印しました！'}</p>`;b.hidden=false;clearTimeout(boom.t);boom.t=setTimeout(()=>b.hidden=true,rare?2800:1500)}
 
+const STAMP_BIASA=20,STAMP_LANGKA=[21,22,23]; // samakan dengan JUMLAH_GAMBAR dan GAMBAR_LANGKA di Code.gs
+$('#ujiS').onclick=()=>{
+  const all=[];for(let i=1;i<=STAMP_BIASA;i++)all.push(i);STAMP_LANGKA.forEach(i=>all.push(i));
+  modal(`<h3>Uji tampilan stamp</h3><p class="hint" style="margin:0">Ketuk gambar untuk melihat animasi dan suaranya. Tidak ada data yang disimpan.</p><div class="tg">${all.map(i=>{const r=STAMP_LANGKA.includes(i);return `<button class="tb${r?' rr':''}" data-i="${i}">${simg(i,r?'rare':'',0,'楓')}<small>${i}</small></button>`}).join('')}</div><button class="btn" onclick="closeM()">Tutup</button>`);
+  document.querySelectorAll('#modal .tb').forEach(b=>b.onclick=()=>boom(+b.dataset.i,STAMP_LANGKA.includes(+b.dataset.i)));
+};
 let TAB='';
 async function muatUlang(){
   const b=$('#rf');if(!b||b.classList.contains('spin'))return;b.classList.add('spin');
