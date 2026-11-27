@@ -418,11 +418,12 @@ const SND=new Audio('stamp/tuturu_1.mp3');SND.preload='auto';
 function bunyi(){try{SND.currentTime=0;const p=SND.play();if(p&&p.catch)p.catch(()=>{})}catch(e){}}
 function boom(img,rare,naik){bunyi();const b=$('#boom'),g=SE[sOf(now.getMonth()+1)][1];b.className=rare?'rare':'';b.innerHTML=(img?simg(img,rare?'rare':'',-8,g):`<span class="hk">${g}</span>`)+`<p>${rare?'✨ 希少スタンプ！ Stamp langka! ✨'+(naik?'<br><small>Stamp lain hari ini ikut naik jadi langka!</small>':''):'押印しました！'}</p>`;b.hidden=false;clearTimeout(boom.t);boom.t=setTimeout(()=>b.hidden=true,rare?(naik?3600:2800):1500)}
 
-const STAMP_BIASA=20,STAMP_LANGKA=[21,22,23]; // samakan dengan JUMLAH_GAMBAR dan GAMBAR_LANGKA di Code.gs
-$('#ujiS').onclick=()=>{
-  const all=[];for(let i=1;i<=STAMP_BIASA;i++)all.push(i);STAMP_LANGKA.forEach(i=>all.push(i));
-  modal(`<h3>Uji tampilan stamp</h3><p class="hint" style="margin:0">Ketuk gambar untuk melihat animasi dan suaranya. Tidak ada data yang disimpan.</p><div class="tg">${all.map(i=>{const r=STAMP_LANGKA.includes(i);return `<button class="tb${r?' rr':''}" data-i="${i}">${simg(i,r?'rare':'',0,'楓')}<small>${i}</small></button>`}).join('')}</div><button class="btn" onclick="closeM()">Tutup</button>`);
-  document.querySelectorAll('#modal .tb').forEach(b=>b.onclick=()=>boom(+b.dataset.i,STAMP_LANGKA.includes(+b.dataset.i)));
+const KFG0={biasa:Array.from({length:20},(_,i)=>i+1),langka:[21,22,23]}; // cadangan bila server belum mengirim daftar
+$('#ujiS').onclick=async()=>{
+  let kf=KFG0;try{const d=await apiS('infoStamp',[T],()=>{});if(d&&d.biasa)kf=d}catch(e){}
+  const all=kf.biasa.concat(kf.langka);
+  modal(`<h3>Uji tampilan stamp</h3><p class="hint" style="margin:0">Ketuk gambar untuk melihat animasi dan suaranya. Tidak ada data yang disimpan.</p><div class="tg">${all.map(i=>{const r=kf.langka.includes(i);return `<button class="tb${r?' rr':''}" data-i="${i}">${simg(i,r?'rare':'',0,'楓')}<small>${i}</small></button>`}).join('')}</div><button class="btn" onclick="closeM()">Tutup</button>`)
+  document.querySelectorAll('#modal .tb').forEach(b=>b.onclick=()=>boom(+b.dataset.i,kf.langka.includes(+b.dataset.i)));
 };
 let KY=now.getFullYear(),KM=now.getMonth()+1;
 async function loadKoleksi(){
@@ -433,14 +434,14 @@ async function loadKoleksi(){
 }
 function drawKoleksi(box,d){
   const cnt={};d.month.forEach(s=>{if(s.img)cnt[s.img]=(cnt[s.img]||0)+1});
-  const biasa=[];for(let i=1;i<=STAMP_BIASA;i++)biasa.push(i);
+  const kf=d.kfg||KFG0,biasa=kf.biasa,LANGKA=kf.langka;
   const tile=(i,r)=>{const n=cnt[i]||0;
     if(n)return `<div class="cl${r?' rr':''}">${simg(i,r?'rare':'',0,'楓')}${n>1?`<b>×${n}</b>`:''}<small>${i}</small></div>`;
     return r?`<div class="cl lock rr"><span>？</span></div>`:`<div class="cl lock">${simg(i,'',0,'')}<small>${i}</small></div>`};
-  const gb=biasa.filter(i=>cnt[i]).length,gr=STAMP_LANGKA.filter(i=>cnt[i]).length;
-  box.innerHTML=`<div class="tot"><div>Koleksi stamp bulan ini<small>direset setiap bulan</small></div><b>${gb+gr}/${STAMP_BIASA+STAMP_LANGKA.length}</b></div>
-  <h4>Stamp biasa<small>${gb}/${STAMP_BIASA}</small></h4><div class="cg">${biasa.map(i=>tile(i,false)).join('')}</div>
-  <h4>Stamp langka ✨<small>${gr}/${STAMP_LANGKA.length}</small></h4><div class="cg">${STAMP_LANGKA.map(i=>tile(i,true)).join('')}</div>`;
+  const gb=biasa.filter(i=>cnt[i]).length,gr=LANGKA.filter(i=>cnt[i]).length;
+  box.innerHTML=`<div class="tot"><div>Koleksi stamp bulan ini<small>direset setiap bulan</small></div><b>${gb+gr}/${biasa.length+LANGKA.length}</b></div>
+  <h4>Stamp biasa<small>${gb}/${biasa.length}</small></h4><div class="cg">${biasa.map(i=>tile(i,false)).join('')}</div>
+  <h4>Stamp langka ✨<small>${gr}/${LANGKA.length}</small></h4><div class="cg">${LANGKA.map(i=>tile(i,true)).join('')}</div>`;
 }
 $('#kpv').onclick=()=>{KM--;if(KM<1){KM=12;KY--}loadKoleksi()};
 $('#knx').onclick=()=>{KM++;if(KM>12){KM=1;KY++}loadKoleksi()};
