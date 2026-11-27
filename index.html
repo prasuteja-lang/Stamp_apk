@@ -114,6 +114,7 @@ nav button.on{opacity:1;color:var(--ink)}
 .tb small{position:absolute;bottom:1px;right:4px;font:700 10px 'Zen Maru Gothic',sans-serif;opacity:.6}
 .c.rr{background:radial-gradient(circle at 50% 45%,#fff6cf 0%,var(--paper) 78%);border:1px solid #f5b800;box-shadow:0 0 8px rgba(245,184,0,.45)}
 #boom p small{font-size:14px}
+#spf{display:block;width:100%;height:calc(100vh - 190px);min-height:420px;border:0;border-radius:14px;background:#fff}
 .seg{display:flex;gap:8px;margin:4px 0 14px}
 .seg button{flex:1;padding:11px 6px;border-radius:12px;border:1.5px solid var(--ink);background:var(--paper);color:var(--ink);font:700 14px 'Zen Maru Gothic',sans-serif;cursor:pointer}
 .seg button.on{background:var(--ink);color:#fff}
@@ -165,6 +166,10 @@ nav button.spin b{animation:rot .8s linear infinite}
     <input id="hs" placeholder="Cari hafalan">
     <div id="hl"></div>
   </section>
+  <section class="pn" id="p-spinner" hidden style="max-width:900px;padding:0 10px 10px">
+    <p class="hint" style="margin:0 0 8px;text-align:right"><a href="https://prasuteja-lang.github.io/sakura_spinner/" target="_blank" rel="noopener" style="color:var(--ink);font-weight:700">Buka di browser ↗</a></p>
+    <iframe id="spf" title="Sakura Spinner" allow="autoplay; fullscreen; clipboard-write" referrerpolicy="no-referrer-when-downgrade"></iframe>
+  </section>
   <nav id="tabs"></nav>
 </div>
 
@@ -188,7 +193,7 @@ nav button.spin b{animation:rot .8s linear infinite}
 const $=s=>document.querySelector(s),esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const MN=['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
 const SE={fuyu:['冬','雪','❄️'],haru:['春','桜','🌸'],natsu:['夏','夏','🌻'],aki:['秋','楓','🍁']};
-const TABS={siswa:[['kartu','帳','Kartu'],['minta','印','Minta stamp']],sensei:[['kode','鍵','Kode'],['siswa','生','Siswa'],['hafalan','語','Kotoba']]};
+const TABS={siswa:[['kartu','帳','Kartu'],['minta','印','Minta stamp']],sensei:[['kode','鍵','Kode'],['siswa','生','Siswa'],['hafalan','語','Kotoba'],['spinner','桜','Spinner']]};
 const sOf=m=>m==12||m<3?'fuyu':m<6?'haru':m<9?'natsu':'aki';
 const now=new Date();let T=null,ME=null,H=null,CD=null,CUR=null,QR=null,Y=now.getFullYear(),M=now.getMonth()+1;
 const ymS=(y,m)=>y+'-'+String(m).padStart(2,'0');
@@ -411,7 +416,7 @@ async function muatUlang(){
 function go(t){
   clearInterval(PT);stopScan();document.querySelectorAll('.pn').forEach(p=>p.hidden=p.id!='p-'+t);
   document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t==t));
-  TAB=t;return ({kartu:loadKartu,minta:loadMinta,kode:()=>theme(now.getMonth()+1),siswa:loadSiswa,hafalan:loadHafalan})[t]();
+  TAB=t;return ({kartu:loadKartu,minta:loadMinta,kode:()=>theme(now.getMonth()+1),siswa:loadSiswa,hafalan:loadHafalan,spinner:()=>{theme(now.getMonth()+1);const f=$('#spf');if(!f.dataset.l){f.dataset.l=1;f.src='https://prasuteja-lang.github.io/sakura_spinner/'}}})[t]();
 }
 function enter(){
   $('#login').hidden=true;$('#app').hidden=false;$('#who').textContent=ME.nama;$('#role').textContent=ME.role=='sensei'?'Sensei 先生':'Siswa 生徒';
